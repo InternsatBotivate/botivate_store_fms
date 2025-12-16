@@ -1,4 +1,5 @@
-export type Sheet = 'INDENT' | 'RECEIVED' | 'MASTER' | 'USER' | 'PO MASTER' | 'INVENTORY' | 'QUOTATION HISTORY';
+export type Sheet = 'INDENT' | 'RECEIVED' | 'MASTER' | 'USER' | 'PO MASTER' | 'INVENTORY' | 'QUOTATION HISTORY' | 'MASTER'
+| 'QUOTATION VENDOR';
 
 export type IndentSheet = {
     timestamp: string;

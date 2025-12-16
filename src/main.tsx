@@ -22,6 +22,9 @@ import AllIndent from './components/views/AllIndent';
 import Quotation from './components/views/Quotation';
 import type { RouteAttributes } from './types';
 
+import UpdateRate from './components/views/UpadateRate';
+
+
 import {
     LayoutDashboard,
     ClipboardList,
@@ -255,6 +258,7 @@ const routes: RouteAttributes[] = [
                     sheet.indentType === 'Store Out'
             ).length,
     },
+    
     {
         path: 'quotation',
         gateKey: 'quotation',
@@ -292,6 +296,11 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
+                <Route
+  path="/updaterate"
+  element={<UpdateRate />}
+/>
+
                     <Route path="/login" element={<Login />} />
                     <Route
                         path="/"

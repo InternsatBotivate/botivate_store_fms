@@ -65,4 +65,9 @@
     "overrides": {
         "react-is": "^19.1.0"
     }
+,
+
+    "react-dom/server": "latest"
+
 }
+

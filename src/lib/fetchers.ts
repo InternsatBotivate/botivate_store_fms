@@ -143,33 +143,43 @@ export async function fetchVendors() {
 }
 
 export async function postToSheet(
-    data:
-        | Partial<IndentSheet>[]
-        | Partial<ReceivedSheet>[]
-        | Partial<UserPermissions>[]
-        | Partial<PoMasterSheet>[]
-        | Partial<QuotationHistorySheet>[],
-    action: 'insert' | 'update' | 'delete' | 'insertQuotation' = 'insert', // Add insertQuotation
-    sheet: Sheet = 'INDENT'
+  data:
+      | Partial<IndentSheet>[]
+      | Partial<ReceivedSheet>[]
+      | Partial<UserPermissions>[]
+      | Partial<PoMasterSheet>[]
+      | Partial<QuotationHistorySheet>[],
+  action: 'insert' | 'update' | 'delete' | 'insertQuotation' | 'sendSupplierEmail' = 'insert',
+  sheet: Sheet = 'INDENT',
+  extraParams?: any
 ) {
-    const form = new FormData();
-    form.append('action', action);
-    form.append('sheetName', sheet);
-    form.append('rows', JSON.stringify(data));
-    const response = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
-        method: 'POST',
-        body: form,
-    });
-    if (!response.ok) {
-        console.error(`Error in fetch: ${response.status} - ${response.statusText}`);
-        throw new Error(`Failed to ${action} data`);
-    }
-    const res = await response.json();
-    if (!res.success) {
-        console.error(`Error in response: ${res.message}`);
-        throw new Error('Something went wrong in the API');
-    }
-    return res;
+  const form = new FormData();
+  form.append('action', action);
+  form.append('sheetName', sheet);
+  form.append('rows', JSON.stringify(data));
+  
+  // Extra parameters add करें अगर available हैं
+  if (extraParams) {
+      form.append('params', JSON.stringify(extraParams));
+  }
+  
+  const response = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
+      method: 'POST',
+      body: form,
+  });
+  
+  if (!response.ok) {
+      console.error(`Error in fetch: ${response.status} - ${response.statusText}`);
+      throw new Error(`Failed to ${action} data`);
+  }
+  
+  const res = await response.json();
+  if (!res.success) {
+      console.error(`Error in response: ${res.message}`);
+      throw new Error('Something went wrong in the API');
+  }
+  
+  return res;
 }
 // Add this new function in fetchers.ts
 export async function postToMasterSheet(data: any[]) {
@@ -192,3 +202,45 @@ export async function postToMasterSheet(data: any[]) {
         throw new Error('Something went wrong in the API');
     }
 }
+
+
+
+// fetchers.ts mein ye function add kariye (baaki sab same rahega)
+export async function sendHtmlEmail(params: {
+    to: string;
+    subject: string;
+    html: string;
+    supplierName: string;
+    quotationNumber: string;
+  }) {
+    try {
+      // Aapke existing pattern ko follow kar raha hai
+      const response = await fetch(import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL!, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          action: 'sendHtmlEmail',
+          params: JSON.stringify(params)
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const result = await response.text();
+      const parsedResult = JSON.parse(result);
+      
+      if (!parsedResult.success) {
+        throw new Error(parsedResult.error || 'Email sending failed');
+      }
+      
+      return parsedResult.message;
+    } catch (error) {
+      console.error('Email send error:', error);
+      throw new Error(`Failed to send HTML quotation: ${error}`);
+    }
+  }
+  
