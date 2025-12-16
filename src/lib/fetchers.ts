@@ -142,44 +142,118 @@ export async function fetchVendors() {
   }
 }
 
+// src/lib/fetchers.ts
+
+const SHEET_URL = import.meta.env.VITE_SHEET_URL;
+
+export type PostSheetAction = 
+  | "insert" 
+  | "update" 
+  | "delete" 
+  | "insertQuotation" 
+  | "sendSupplierEmail"
+  | "updateSupplierRates";
+
 export async function postToSheet(
-  data:
-      | Partial<IndentSheet>[]
-      | Partial<ReceivedSheet>[]
-      | Partial<UserPermissions>[]
-      | Partial<PoMasterSheet>[]
-      | Partial<QuotationHistorySheet>[],
-  action: 'insert' | 'update' | 'delete' | 'insertQuotation' | 'sendSupplierEmail' = 'insert',
-  sheet: Sheet = 'INDENT',
-  extraParams?: any
-) {
-  const form = new FormData();
-  form.append('action', action);
-  form.append('sheetName', sheet);
-  form.append('rows', JSON.stringify(data));
-  
-  // Extra parameters add करें अगर available हैं
-  if (extraParams) {
-      form.append('params', JSON.stringify(extraParams));
+  rows: any[],
+  action: PostSheetAction,
+  sheetName: string,
+  params?: any
+): Promise<any> {
+  try {
+    const formData = new FormData();
+    formData.append("rows", JSON.stringify(rows));
+    formData.append("action", action);
+    formData.append("sheetName", sheetName);
+    
+    if (params) {
+      formData.append("params", JSON.stringify(params));
+    }
+
+    const response = await fetch(SHEET_URL, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("postToSheet error:", error);
+    throw error;
   }
-  
-  const response = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
-      method: 'POST',
-      body: form,
-  });
-  
-  if (!response.ok) {
-      console.error(`Error in fetch: ${response.status} - ${response.statusText}`);
-      throw new Error(`Failed to ${action} data`);
+}
+
+export async function fetchSheet(sheetName: string): Promise<any> {
+  try {
+    const response = await fetch(
+      `${SHEET_URL}?sheetName=${encodeURIComponent(sheetName)}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.rows || data.options || data;
+  } catch (error) {
+    console.error("fetchSheet error:", error);
+    throw error;
   }
-  
-  const res = await response.json();
-  if (!res.success) {
-      console.error(`Error in response: ${res.message}`);
-      throw new Error('Something went wrong in the API');
+}
+
+// Optional: Upload file function
+export async function uploadFile(
+  file: File,
+  folderId: string,
+  uploadType?: string,
+  email?: string
+): Promise<string> {
+  try {
+    const reader = new FileReader();
+    
+    return new Promise((resolve, reject) => {
+      reader.onload = async () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        
+        const formData = new FormData();
+        formData.append("action", "upload");
+        formData.append("fileName", file.name);
+        formData.append("fileData", base64Data);
+        formData.append("mimeType", file.type);
+        formData.append("folderId", folderId);
+        
+        if (uploadType) {
+          formData.append("uploadType", uploadType);
+        }
+        if (email) {
+          formData.append("email", email);
+        }
+
+        const response = await fetch(SHEET_URL, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          resolve(result.fileUrl || result.downloadUrl);
+        } else {
+          reject(new Error(result.error || "Upload failed"));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error("File read error"));
+      reader.readAsDataURL(file);
+    });
+  } catch (error) {
+    console.error("uploadFile error:", error);
+    throw error;
   }
-  
-  return res;
 }
 // Add this new function in fetchers.ts
 export async function postToMasterSheet(data: any[]) {
