@@ -101,161 +101,103 @@ export async function fetchSheet(
     return raw.rows.filter((r: IndentSheet) => r.timestamp !== '');
 }
 
-
-// lib/fetchers.ts में या जहां postToSheet function है
-
 export async function postToQuotationHistory(rows: any[]) {
-  try {
-    const formData = new FormData();
-    formData.append('action', 'insertQuotation');
-    formData.append('rows', JSON.stringify(rows));
-
-    const response = await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to submit quotation');
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error posting quotation:', error);
-    throw error;
-  }
-}
-
-
-export async function fetchVendors() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_APP_SCRIPT_URL}?sheetName=MASTER&fetchType=vendors`
-    );
-    const data = await response.json();
-    return data.vendors || [];
-  } catch (error) {
-    console.error('Error fetching vendors:', error);
-    return [];
-  }
-}
-
-// src/lib/fetchers.ts
-
-const SHEET_URL = import.meta.env.VITE_SHEET_URL;
-
-export type PostSheetAction = 
-  | "insert" 
-  | "update" 
-  | "delete" 
-  | "insertQuotation" 
-  | "sendSupplierEmail"
-  | "updateSupplierRates";
-
-export async function postToSheet(
-  rows: any[],
-  action: PostSheetAction,
-  sheetName: string,
-  params?: any
-): Promise<any> {
-  try {
-    const formData = new FormData();
-    formData.append("rows", JSON.stringify(rows));
-    formData.append("action", action);
-    formData.append("sheetName", sheetName);
-    
-    if (params) {
-      formData.append("params", JSON.stringify(params));
-    }
-
-    const response = await fetch(SHEET_URL, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("postToSheet error:", error);
-    throw error;
-  }
-}
-
-export async function fetchSheet(sheetName: string): Promise<any> {
-  try {
-    const response = await fetch(
-      `${SHEET_URL}?sheetName=${encodeURIComponent(sheetName)}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.rows || data.options || data;
-  } catch (error) {
-    console.error("fetchSheet error:", error);
-    throw error;
-  }
-}
-
-// Optional: Upload file function
-export async function uploadFile(
-  file: File,
-  folderId: string,
-  uploadType?: string,
-  email?: string
-): Promise<string> {
-  try {
-    const reader = new FileReader();
-    
-    return new Promise((resolve, reject) => {
-      reader.onload = async () => {
-        const base64Data = (reader.result as string).split(',')[1];
-        
+    try {
         const formData = new FormData();
-        formData.append("action", "upload");
-        formData.append("fileName", file.name);
-        formData.append("fileData", base64Data);
-        formData.append("mimeType", file.type);
-        formData.append("folderId", folderId);
-        
-        if (uploadType) {
-          formData.append("uploadType", uploadType);
-        }
-        if (email) {
-          formData.append("email", email);
-        }
+        formData.append('action', 'insertQuotation');
+        formData.append('rows', JSON.stringify(rows));
 
-        const response = await fetch(SHEET_URL, {
-          method: "POST",
-          body: formData,
+        const response = await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: formData,
         });
 
         const result = await response.json();
         
-        if (result.success) {
-          resolve(result.fileUrl || result.downloadUrl);
-        } else {
-          reject(new Error(result.error || "Upload failed"));
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to submit quotation');
         }
-      };
-      
-      reader.onerror = () => reject(new Error("File read error"));
-      reader.readAsDataURL(file);
-    });
-  } catch (error) {
-    console.error("uploadFile error:", error);
-    throw error;
-  }
+
+        return result;
+    } catch (error) {
+        console.error('Error posting quotation:', error);
+        throw error;
+    }
 }
-// Add this new function in fetchers.ts
+
+export async function fetchVendors() {
+    try {
+        const response = await fetch(
+            `${import.meta.env.VITE_APP_SCRIPT_URL}?sheetName=MASTER&fetchType=vendors`
+        );
+        const data = await response.json();
+        return data.vendors || [];
+    } catch (error) {
+        console.error('Error fetching vendors:', error);
+        return [];
+    }
+}
+
+export type PostSheetAction = 
+    | "insert" 
+    | "update" 
+    | "delete" 
+    | "insertQuotation" 
+    | "sendSupplierEmail"
+    | "updateSupplierRates";
+
+// Note: This function needs a different name to avoid conflict with fetchSheet above
+export async function fetchGenericSheet(sheetName: string): Promise<any> {
+    try {
+        const response = await fetch(
+            `${import.meta.env.VITE_APP_SCRIPT_URL}?sheetName=${encodeURIComponent(sheetName)}`
+        );
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.rows || data.options || data;
+    } catch (error) {
+        console.error("fetchGenericSheet error:", error);
+        throw error;
+    }
+}
+
+export async function postToSheet(
+    rows: any[],
+    action: PostSheetAction,
+    sheetName: string,
+    params?: any
+): Promise<any> {
+    try {
+        const formData = new FormData();
+        formData.append("rows", JSON.stringify(rows));
+        formData.append("action", action);
+        formData.append("sheetName", sheetName);
+        
+        if (params) {
+            formData.append("params", JSON.stringify(params));
+        }
+
+        const response = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error("postToSheet error:", error);
+        throw error;
+    }
+}
+
 export async function postToMasterSheet(data: any[]) {
     try {
         const response = await fetch('/api/master-sheet', {
@@ -277,44 +219,39 @@ export async function postToMasterSheet(data: any[]) {
     }
 }
 
-
-
-// fetchers.ts mein ye function add kariye (baaki sab same rahega)
 export async function sendHtmlEmail(params: {
     to: string;
     subject: string;
     html: string;
     supplierName: string;
     quotationNumber: string;
-  }) {
+}) {
     try {
-      // Aapke existing pattern ko follow kar raha hai
-      const response = await fetch(import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL!, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          action: 'sendHtmlEmail',
-          params: JSON.stringify(params)
-        })
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const result = await response.text();
-      const parsedResult = JSON.parse(result);
-      
-      if (!parsedResult.success) {
-        throw new Error(parsedResult.error || 'Email sending failed');
-      }
-      
-      return parsedResult.message;
+        const response = await fetch(import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL!, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                action: 'sendHtmlEmail',
+                params: JSON.stringify(params)
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.text();
+        const parsedResult = JSON.parse(result);
+        
+        if (!parsedResult.success) {
+            throw new Error(parsedResult.error || 'Email sending failed');
+        }
+        
+        return parsedResult.message;
     } catch (error) {
-      console.error('Email send error:', error);
-      throw new Error(`Failed to send HTML quotation: ${error}`);
+        console.error('Email send error:', error);
+        throw new Error(`Failed to send HTML quotation: ${error}`);
     }
-  }
-  
+}
