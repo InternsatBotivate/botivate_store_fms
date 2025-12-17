@@ -1053,20 +1053,20 @@ import { toast } from 'sonner';
       fetchMasterSuppliers();
     }, [details]);
 
-    // Eligible items (planned2 not null & actual2 null)
-    const eligibleItems = useMemo(
-      () =>
-        indentSheet
-          .filter((item) => {
-            const planned2NotNull =
-              item.planned2 !== null && item.planned2 !== undefined && item.planned2 !== '';
-            const actual2IsNull =
-              item.actual2 === null || item.actual2 === undefined || item.actual2 === '';
-            return planned2NotNull && actual2IsNull;
-          })
-          .reverse(),
-      [indentSheet],
-    );
+    const eligibleItems = useMemo(() => {
+      const uniqueIndents = new Map<string, typeof indentSheet[0]>();
+      
+      // Reverse order me process karo
+      const reversedSheet = [...indentSheet].reverse();
+      
+      reversedSheet.forEach(item => {
+        if (!uniqueIndents.has(item.indentNumber)) {
+          uniqueIndents.set(item.indentNumber, item);
+        }
+      });
+      
+      return Array.from(uniqueIndents.values());
+    }, [indentSheet]);
 
     const form = useForm<QuotationForm>({
       resolver: zodResolver(quotationSchema),
@@ -1148,226 +1148,201 @@ import { toast } from 'sonner';
   });
 
 
-  function generateEmailHTML(
-    quotationNumber: string,
-    items: any[],
-    workerName: string,
-    companyDetails: any,
-    supplier: SupplierInfo
-  ): string {
-    const baseUrl = '/updaterate';
-  
-  const url = `${baseUrl}?updaterate=${quotationNumber}&supplier=${encodeURIComponent(
-    supplier.name,
-  )}`;
-  
+  function generateEmailHTML(quotationNumber: string, items: any[], companyDetails: any, supplier: SupplierInfo): string {
+    console.log("📧 Email Generation - Items count:", items.length);
+    
+    // Items ko simplified format me convert karo
+    const simplifiedItems = items.map(item => ({
+      code: item.indentNumber || "N/A",
+      name: item.productName || "Product",
+      qty: item.quantity || "1",
+      uom: item.uom || "PCS",
+      spec: item.specifications || "N/A"
+    }));
+    
+    // Items ko URL-safe JSON me convert karo
+    const itemsJSON = JSON.stringify(simplifiedItems);
+    console.log("Items JSON length:", itemsJSON.length);
+    
+    // URL banayein
+    const url = `${window.location.origin}/updaterate?quotation=${quotationNumber}&supplier=${encodeURIComponent(supplier.name)}&items=${encodeURIComponent(itemsJSON)}`;
+    
+    console.log("Generated URL:", url);
     
     return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            line-height: 1.6; 
-            color: #333; 
-            margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
-          }
-          .email-container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            background: white;
-            border: 1px solid #ddd;
-          }
-          .email-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            font-size: 13px;
-            line-height: 1.8;
-          }
-          .email-header p {
-            margin: 5px 0;
-          }
-          .email-body {
-            padding: 30px 20px;
-            font-size: 14px;
-          }
-          .email-body p {
-            margin: 15px 0;
-          }
-          .party-name {
-            background: #0066cc;
-            color: white;
-            padding: 8px 16px;
-            display: inline-block;
-            font-weight: 600;
-            margin-top: 10px;
-          }
-          .link {
-            color: #0066cc;
-            text-decoration: underline;
-          }
-          .signature {
-            margin-top: 30px;
-            line-height: 1.6;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="email-container">
-          <div class="email-header">
-            <p><strong>From:</strong> &lt;developer2@botivate.in&gt;</p>
-            <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
-            <p><strong>Subject:</strong> Request For Pricing on Quotation ${quotationNumber}</p>
-            <p><strong>To:</strong> &lt;${supplier.email}&gt;</p>
-          </div>
-          
-          <div class="email-body">
-            <p>Dear ${supplier.name},</p>
-            
-            <p>Please update your rates by clicking the following link: 
-              <a href="${url}" class="link">Click here</a>
-            </p>
-            
-            <div class="signature">
-              <p>Best regards,</p>
-              <div class="party-name">${companyDetails?.companyName || 'Botivate Services LLP'}</div>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-  }
-  
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { 
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #000000;
+      background-color: #ffffff;
+    }
+    .container { 
+      padding: 20px;
+      max-width: 600px;
+    }
+    .header {
+      margin-bottom: 20px;
+      color: #666666;
+      font-size: 13px;
+    }
+    .header strong {
+      color: #000000;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #dddddd;
+      margin: 20px 0;
+    }
+    a {
+      color: #0000EE;
+      text-decoration: underline;
+    }
+    p {
+      margin: 0 0 10px 0;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <p><strong>From:</strong> &lt;developer2@botivate.in&gt;</p>
+      <p><strong>Date:</strong> Tue, 9 Dec 2025 at 14:59</p>
+      <p><strong>Subject:</strong> Request For Pricing on our Quotation</p>
+      <p><strong>To:</strong> ${supplier.email};</p>
+    </div>
+    
+    <hr/>
+    
+    <p>Dear ${supplier.name},</p>
+    
+    <p style="margin: 20px 0;">
+      Please update your rates by clicking the following link:
+      <a href="${url}">Click here</a>
+    </p>
+    
+    <p style="margin: 20px 0 0 0;">
+      Best regards,<br/>
+      ${companyDetails?.companyName || 'Company'}
+    </p>
+  </div>
+</body>
+</html>
+`;}
 
 
-  async function onSubmit(values: QuotationForm) {
-    try {
-      if (selectedItems.length === 0) {
-        toast.error('Please select at least one item');
-        return;
-      }
-      if (selectedSuppliers.length === 0) {
-        toast.error('Please select at least one supplier');
-        return;
-      }
-  
-      const selectedItemsData = eligibleItems.filter((item) =>
-        selectedItems.includes(item.indentNumber),
-      );
-  
-      const allRows: QuotationVendorSheetRow[] = [];
-  
-      // For each selected supplier, push A–F rows
+
+async function onSubmit(values: QuotationForm) {
+  try {
+    if (selectedItems.length === 0) {
+      toast.error('Please select at least one item');
+      return;
+    }
+    if (selectedSuppliers.length === 0) {
+      toast.error('Please select at least one supplier');
+      return;
+    }
+
+    const selectedItemsData = eligibleItems.filter((item) =>
+      selectedItems.includes(item.indentNumber),
+    );
+
+    // Unique quotation numbers
+    const allNumbers = [
+      ...filterUniqueQuotationNumbers(poMasterSheet),
+      ...latestQuotationNumbers,
+    ];
+    
+    let currentMaxNumber = allNumbers
+      .map(num => {
+        const match = num.match(/QT-(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      })
+      .filter(num => num > 0)
+      .reduce((max, num) => Math.max(max, num), 0);
+
+    const supplierQuotations: { [key: string]: string } = {};
+    
+    for (let i = 0; i < supplierInfos.length; i++) {
+      currentMaxNumber += 1;
+      const uniqueQuotationNumber = `QT-${String(currentMaxNumber).padStart(3, '0')}`;
+      supplierQuotations[supplierInfos[i].name] = uniqueQuotationNumber;
+    }
+
+    // Sheet me save karo
+    const rowsToSave = selectedItemsData.map(item => {
+      const row: any = {
+        internalCode: item.indentNumber,      // A
+        productName: item.productName,        // B
+        quantity: item.quantity,              // C
+        uom: item.uom,                        // D
+        specifications: item.specifications || "", // E
+      };
+
+      // Har supplier ke liye columns
+      supplierInfos.forEach((supplier, index) => {
+        row[`vendorName_${index}`] = supplier.name;
+        row[`rate_${index}`] = '';
+        row[`paymentTerm_${index}`] = '';
+        row[`remarks_${index}`] = '';
+      });
+
+      return row;
+    });
+
+    const result = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'insertQuotation',
+        data: JSON.stringify(rowsToSave),
+        supplierCount: String(supplierInfos.length)
+      })
+    });
+
+    const response = await result.json();
+
+    if (response.success) {
+      // Ab emails bhejo
       for (const supplier of supplierInfos) {
-        if (!supplier.name) continue;
-  
-        const supplierRows: QuotationVendorSheetRow[] = selectedItemsData.map((item) => ({
-          internalCode: item.indentNumber,
-          productName: item.productName,
-          quantity: String(item.quantity || ''),
-          uom: item.uom || '',
-          specifications: item.specifications || '',
-          vendorName: supplier.name,
-        }));
-  
-        allRows.push(...supplierRows);
-      }
-  
-      if (allRows.length === 0) {
-        toast.error('No rows to insert');
-        return;
-      }
-  
-      // Insert into Quotation Vendor sheet (A–F)
-      await postToSheet(allRows, 'insertQuotation', 'QUOTATION HISTORY');
-  
-      const emailPromises = supplierInfos.map(async (supplier) => {
-        console.log('Supplier Info:', supplier);
+        if (!supplier.email) continue;
         
-        if (!supplier.email) {
-          console.error(`NO EMAIL for supplier: ${supplier.name}`);
-          toast.error(`No email for ${supplier.name}`);
-          return null;
-        }
-      
-        console.log(`Sending email to: ${supplier.email}`);
-      
-        const emailHtml = generateEmailHTML(
-          values.quotationNumber || '',
-          selectedItemsData,
-          "Science Services LLC",
-          details,
-          supplier
-        );
-      
-        console.log('Email HTML length:', emailHtml.length);
-      
-        try {
-          const result = await postToSheet(
-            [],
-            'sendSupplierEmail',
-            'QUOTATION HISTORY',
-            {
-              quotationNumber: values.quotationNumber || '',
+        const quotationNumber = supplierQuotations[supplier.name];
+        const emailHtml = generateEmailHTML(quotationNumber, selectedItemsData, details, supplier);
+
+        await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'sendSupplierEmail',
+            params: JSON.stringify({
+              quotationNumber: quotationNumber,
               htmlContent: emailHtml,
-              subject: `Request For Pricing on Quotation ${values.quotationNumber || ''}`,
+              subject: `Request For Pricing on Quotation ${quotationNumber}`,
               supplierName: supplier.name,
               supplierEmail: supplier.email,
-              items: selectedItems,
-              sendAsHtml: true,      // ← YE NAYA ADD KIYA
-              attachPdf: false,
-            }
-          );
-          
-          console.log('Email API Result:', result);
-          
-          if (result.success) {
-            toast.success(`Email sent to ${supplier.name}`);
-          } else {
-            toast.error(`Failed to send email to ${supplier.name}: ${result.error}`);
-          }
-          
-          return result;
-        } catch (error) {
-          console.error('Email sending API error:', error);
-          toast.error(`API error for ${supplier.name}: ${error.message}`);
-          return null;
-        }
-      });
-  
-      // Wait for all emails to be sent
-      const emailResults = await Promise.all(emailPromises);
-      const successfulEmails = emailResults.filter(r => r && r.success).length;
-      
-      if (successfulEmails > 0) {
-        toast.success(`Emails sent to ${successfulEmails} supplier(s)`);
-      } else {
-        toast.warning('Quotation saved but no emails were sent');
+            })
+          })
+        });
       }
-  
-      toast.success(
-        `Saved ${allRows.length} row(s) for ${selectedSuppliers.length} supplier(s)`,
-      );
-  
+
+      toast.success(`✅ Quotation created and emails sent!`);
       form.reset();
       setSelectedItems([]);
       setSelectedSuppliers([]);
       setSupplierInfos([]);
-  
-      setTimeout(() => {
-        updatePoMasterSheet();
-        updateIndentSheet();
-      }, 800);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to save quotation: ' + (err as Error).message);
     }
+
+  } catch (err) {
+    console.error('❌ Error:', err);
+    toast.error('Failed: ' + (err as Error).message);
   }
+}
 
   function onError(e: any) {
     console.log('Form errors:', e);
