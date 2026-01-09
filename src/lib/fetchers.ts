@@ -69,6 +69,7 @@ export async function fetchSheet(
   | UserPermissions[]
   | PoMasterSheet[]
   | InventorySheet[]
+  | QuotationHistorySheet[]
 > {
   const url = `${import.meta.env.VITE_APP_SCRIPT_URL}?sheetName=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url);
@@ -155,45 +156,45 @@ export async function postToSheet(
     console.log(`📤 [postToSheet] Starting: ${action} to ${sheet}`);
     console.log('📝 Data:', data);
     console.log('⚙️ Extra params:', extraParams);
-    
+
     const GAS_URL = import.meta.env.VITE_APP_SCRIPT_URL;
     if (!GAS_URL) {
       throw new Error('VITE_APP_SCRIPT_URL environment variable is not set');
     }
-    
+
     console.log('🔗 GAS URL:', GAS_URL);
-    
+
     // FormData create karo
     const form = new FormData();
     form.append('action', action);
     form.append('sheetName', sheet);
-    
+
     // Data add karo agar hai to
     if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
       form.append('rows', JSON.stringify(data));
       console.log(`📦 Adding ${Array.isArray(data) ? data.length : 1} row(s) to FormData`);
     }
-    
+
     // Extra params add karo
     if (extraParams) {
       form.append('params', JSON.stringify(extraParams));
       console.log('📋 Extra params added');
     }
-    
+
     console.log('🚀 Sending request to GAS...');
-    
+
     // Fetch request
     const response = await fetch(GAS_URL, {
       method: 'POST',
       body: form,
     });
-    
+
     console.log('📨 Response status:', response.status, response.statusText);
-    
+
     // Response parse karo
     const responseText = await response.text();
     console.log('📄 Raw response text:', responseText.substring(0, 500));
-    
+
     let res;
     try {
       res = JSON.parse(responseText);
@@ -203,21 +204,21 @@ export async function postToSheet(
       console.error('Raw response:', responseText);
       throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 200)}`);
     }
-    
+
     // Check if response has success property
     if (res.success === undefined) {
       console.warn('⚠️ Response missing "success" property, assuming success');
       return res;
     }
-    
+
     if (!res.success) {
       console.error('❌ API returned failure:', res);
       throw new Error(res.message || res.error || 'API returned unsuccessful response');
     }
-    
+
     console.log(`🎉 ${action} successful to ${sheet}`);
     return res;
-    
+
   } catch (error) {
     console.error('💥 postToSheet Error:', {
       name: error.name,

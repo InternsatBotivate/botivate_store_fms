@@ -20,6 +20,7 @@ import TrainnigVideo from './components/views/TrainingVideo';
 import License from './components/views/License';
 import AllIndent from './components/views/AllIndent';
 import Quotation from './components/views/Quotation';
+import ComparisonPage from './components/views/ComparisonPage';
 import type { RouteAttributes } from './types';
 
 import UpdateRate from './components/views/UpadateRate';
@@ -40,7 +41,7 @@ import {
     Store,
     Video,
     KeyRound,
-    
+    LibraryBig
 } from 'lucide-react';
 import type { UserPermissions } from './types/sheets';
 import Administration from './components/views/Administration';
@@ -66,9 +67,9 @@ function GatedRoute({
 }) {
     const { user } = useAuth();
     if (!identifier) return children;
-    
+
     const permissionValue = (user as any)[identifier];
-    
+
     // Check permission
     if (typeof permissionValue === 'string') {
         if (permissionValue.toUpperCase() !== 'TRUE') {
@@ -85,22 +86,22 @@ function GatedRoute({
     } else {
         return <Navigate to="/" replace />;
     }
-    
+
     return children;
 }
 
 function DefaultRoute({ routes }: { routes: RouteAttributes[] }) {
     const { user } = useAuth();
-    
+
     if (!user) return <Navigate to="/login" />;
-    
+
     // Find first accessible route
     const firstAccessibleRoute = routes.find(route => {
         // Skip routes without gateKey (always accessible)
         if (!route.gateKey) return true;
-        
+
         const permissionValue = (user as any)[route.gateKey];
-        
+
         // Check if user has access
         if (typeof permissionValue === 'string') {
             return permissionValue.toUpperCase() === 'TRUE';
@@ -113,11 +114,11 @@ function DefaultRoute({ routes }: { routes: RouteAttributes[] }) {
         }
         return false;
     });
-    
+
     if (firstAccessibleRoute) {
         return <Navigate to={`/${firstAccessibleRoute.path}`} replace />;
     }
-    
+
     // If no accessible routes, logout or show error
     return <Navigate to="/login" replace />;
 }
@@ -148,8 +149,8 @@ const routes: RouteAttributes[] = [
         notifications: () => 0,
     },
 
-    
-     {
+
+    {
         path: 'all-indent',
         gateKey: 'allIndent',
         name: 'All Indent',
@@ -258,13 +259,21 @@ const routes: RouteAttributes[] = [
                     sheet.indentType === 'Store Out'
             ).length,
     },
-    
+
     {
         path: 'quotation',
         gateKey: 'quotation',
         name: 'Quotation',
         icon: <ClipboardList size={20} />,
         element: <Quotation />,
+        notifications: () => 0,
+    },
+    {
+        path: 'comparison',
+        gateKey: 'quotation',
+        name: 'Comparison',
+        icon: <LibraryBig size={20} />,
+        element: <ComparisonPage />,
         notifications: () => 0,
     },
     {
@@ -275,7 +284,7 @@ const routes: RouteAttributes[] = [
         element: <Administration />,
         notifications: () => 0,
     },
-    { 
+    {
         path: 'training-video',
         name: 'Training Video',
         icon: <Video size={20} />,
@@ -296,10 +305,10 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                <Route
-  path="/updaterate"
-  element={<UpdateRate />}
-/>
+                    <Route
+                        path="/updaterate"
+                        element={<UpdateRate />}
+                    />
 
                     <Route path="/login" element={<Login />} />
                     <Route

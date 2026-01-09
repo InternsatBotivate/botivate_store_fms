@@ -69,7 +69,7 @@
 //       return match ? parseInt(match[1]) : 0;
 //     })
 //     .filter(num => num > 0);
-  
+
 //   const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
 //   return `QT-${String(maxNumber + 1).padStart(3, '0')}`;
 // }
@@ -139,12 +139,12 @@
 //       try {
 //         const quotationHistory = await fetchSheet('Quotation');
 //         console.log('Fetched Quotation:', quotationHistory);
-        
+
 //         if (Array.isArray(quotationHistory)) {
 //           const quotationNos = quotationHistory
 //             .map((row: any) => row.quatationNo || row.quotationNo || '')
 //             .filter((no: string) => no && no.trim() !== '');
-          
+
 //           setLatestQuotationNumbers(quotationNos);
 //           console.log('Latest quotation numbers:', quotationNos);
 //         }
@@ -162,24 +162,24 @@
 //     function hasVendors(data: any): data is { vendors: any[] } {
 //       return data && typeof data === 'object' && 'vendors' in data;
 //     }
-    
+
 //     const fetchMasterSuppliers = async () => {
 //       try {
 //         console.log('Fetching MASTER sheet data...');
-        
+
 //         const masterData = await fetchSheet('MASTER');
-        
+
 //         console.log('MASTER sheet raw data:', masterData);
-        
+
 //         // Use type guard to safely access vendors
 //         let vendorsArray: any[] = [];
-        
+
 //         if (hasVendors(masterData)) {
 //           vendorsArray = masterData.vendors || [];
 //         } else if (Array.isArray(masterData)) {
 //           vendorsArray = masterData;
 //         }
-        
+
 //         const suppliers: MasterSheetSupplier[] = vendorsArray
 //           .map((vendor: any) => ({
 //             supplierName: vendor.vendorName || vendor.supplierName || '',
@@ -191,10 +191,10 @@
 //             const name = supplier.supplierName;
 //             return name && typeof name === 'string' && name.trim() !== '';
 //           });
-        
+
 //         console.log('Processed suppliers:', suppliers);
 //         setMasterSuppliers(suppliers);
-        
+
 //         if (suppliers.length === 0) {
 //           console.warn('No suppliers found in MASTER sheet');
 //           toast.warning('No suppliers found in MASTER sheet');
@@ -202,7 +202,7 @@
 //           console.log(`Successfully loaded ${suppliers.length} suppliers from MASTER sheet`);
 //           toast.success(`Loaded ${suppliers.length} suppliers`);
 //         }
-        
+
 //       } catch (error) {
 //         console.error('Error fetching MASTER sheet suppliers:', error);
 //         toast.error('Failed to load suppliers from MASTER sheet');
@@ -216,14 +216,14 @@
 //   // Filter eligible items - planned2 NOT NULL and actual2 NULL
 //   const eligibleItems = useMemo(() => {
 //     console.log('Total indentSheet items:', indentSheet.length);
-    
+
 //     const filtered = indentSheet.filter(item => {
 //       const planned2NotNull = item.planned2 !== null && item.planned2 !== undefined && item.planned2 !== '';
 //       const actual2IsNull = item.actual2 === null || item.actual2 === undefined || item.actual2 === '';
-      
+
 //       return planned2NotNull && actual2IsNull;
 //     }).reverse();
-    
+
 //     console.log('Filtered eligible items:', filtered.length);
 //     return filtered;
 //   }, [indentSheet]);
@@ -267,9 +267,9 @@
 //       const newSuppliers = prev.includes(supplierName) 
 //         ? prev.filter(s => s !== supplierName)
 //         : [...prev, supplierName];
-      
+
 //       form.setValue('suppliers', newSuppliers);
-      
+
 //       // Fetch supplier info from MASTER sheet data
 //       const infos = newSuppliers.map(name => {
 //         const masterSupplier = masterSuppliers.find(s => s.supplierName === name);
@@ -281,9 +281,9 @@
 //         };
 //       });
 //       setSupplierInfos(infos);
-      
+
 //       console.log('Selected suppliers info:', infos);
-      
+
 //       return newSuppliers;
 //     });
 //   };
@@ -363,7 +363,7 @@
 
 //       for (let i = 0; i < supplierInfos.length; i++) {
 //         const supplierInfo = supplierInfos[i];
-        
+
 //         // Generate unique quotation number for each supplier
 //         currentMaxNumber += 1;
 //         const uniqueQuotationNumber = `QT-${String(currentMaxNumber).padStart(3, '0')}`;
@@ -412,7 +412,7 @@
 //           toast.error(`Email not found for ${supplierInfo.name}!`);
 //           continue;
 //         }
-        
+
 //         const pdfUrl = await uploadFile(
 //           file,
 //           import.meta.env.VITE_PURCHASE_ORDERS_FOLDER,
@@ -441,15 +441,15 @@
 //       console.log('Submitting to Quotation:', allQuotationRows);
 //       console.log('Total rows:', allQuotationRows.length);
 //       console.log('First row:', allQuotationRows[0]);
-      
+
 //       await postToSheet(allQuotationRows, 'insert', 'Quotation');
-      
+
 //       toast.success(`Successfully created ${selectedSuppliers.length} unique quotation(s) for ${selectedSuppliers.length} supplier(s)`);
 //       form.reset();
 //       setSelectedItems([]);
 //       setSelectedSuppliers([]);
 //       setSupplierInfos([]);
-      
+
 //       setTimeout(() => {
 //         updatePoMasterSheet();
 //         updateIndentSheet();
@@ -545,7 +545,7 @@
 //                                   )}
 //                                 </SelectContent>
 //                               </Select>
-                              
+
 //                               {/* Selected suppliers badges */}
 //                               {selectedSuppliers.length > 0 && (
 //                                 <div className="flex flex-wrap gap-2 mt-2">
@@ -818,269 +818,271 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 
 import { useSheets } from '@/context/SheetsContext';
-import { postToSheet, fetchSheet } from '@/lib/fetchers';
-import { cn } from '@/lib/utils';
+import { postToSheet, fetchSheet, uploadFile } from '@/lib/fetchers';
+import { cn, formatDate } from '@/lib/utils';
 import { ClipLoader as Loader } from 'react-spinners';
 import { toast } from 'sonner';
+import { pdf } from '@react-pdf/renderer';
+import POPdf, { type POPdfProps } from '../element/QuotationPdf';
 
-  import type { PoMasterSheet } from '@/types';
-  import UpdateRate from './UpadateRate';
+import type { PoMasterSheet } from '@/types';
+import UpdateRate from './UpadateRate';
 
 
-  type Mode = 'create' | 'revise';
+type Mode = 'create' | 'revise';
 
-  interface SupplierInfo {
-    name: string;
-    address: string;
-    gstin: string;
-    email?: string;
-  }
+interface SupplierInfo {
+  name: string;
+  address: string;
+  gstin: string;
+  email?: string;
+}
 
-  interface MasterSheetSupplier {
-    supplierName: string;
-    vendorGstin: string;
-    vendorAddress: string;
-    email?: string;
-  }
+interface MasterSheetSupplier {
+  supplierName: string;
+  vendorGstin: string;
+  vendorAddress: string;
+  email?: string;
+}
 
-  // Quotation Vendor sheet row (A–F)
-  interface QuotationVendorSheetRow {
-    internalCode: string;      // A
-    productName: string;       // B
-    quantity: string;          // C
-    uom: string;               // D
-    specifications: string;    // E
-    vendorName: string;        // F
-  }
+// Quotation Vendor sheet row (A–F)
+interface QuotationVendorSheetRow {
+  internalCode: string;      // A
+  productName: string;       // B
+  quantity: string;          // C
+  uom: string;               // D
+  specifications: string;    // E
+  vendorName: string;        // F
+}
 
-  const quotationSchema = z.object({
-    quotationNumber: z.string().optional().default(''),
-    quotationDate: z.coerce.date().optional().default(new Date()),
-    suppliers: z.array(z.string()).optional().default([]),
-    description: z.string().optional().default(''),
-    selectedIndents: z.array(z.string()).optional().default([]),
-    terms: z.array(z.string()).optional().default([]),
-  });
+const quotationSchema = z.object({
+  quotationNumber: z.string().optional().default(''),
+  quotationDate: z.coerce.date().optional().default(new Date()),
+  suppliers: z.array(z.string()).optional().default([]),
+  description: z.string().optional().default(''),
+  selectedIndents: z.array(z.string()).optional().default([]),
+  terms: z.array(z.string()).optional().default([]),
+});
 
-  type QuotationForm = z.infer<typeof quotationSchema>;
+type QuotationForm = z.infer<typeof quotationSchema>;
 
-  // Small Badge component
-  const Badge = ({
-    children,
-    className,
-    onClick,
-  }: {
-    children: React.ReactNode;
-    className?: string;
-    onClick?: () => void;
-  }) => (
-    <span
-      className={cn(
-        'inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border cursor-pointer hover:bg-gray-200',
-        className,
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </span>
-  );
+// Small Badge component
+const Badge = ({
+  children,
+  className,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) => (
+  <span
+    className={cn(
+      'inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border cursor-pointer hover:bg-gray-200',
+      className,
+    )}
+    onClick={onClick}
+  >
+    {children}
+  </span>
+);
 
-  function filterUniqueQuotationNumbers(data: PoMasterSheet[]): string[] {
-    const seen = new Set<string>();
-    const result: string[] = [];
-    for (const row of data) {
-      const q = row.quotationNumber ? String(row.quotationNumber).trim() : '';
-      if (q && !seen.has(q)) {
-        seen.add(q);
-        result.push(q);
-      }
+function filterUniqueQuotationNumbers(data: PoMasterSheet[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const row of data) {
+    const q = row.quotationNumber ? String(row.quotationNumber).trim() : '';
+    if (q && !seen.has(q)) {
+      seen.add(q);
+      result.push(q);
     }
-    return result;
   }
+  return result;
+}
 
-  function generateNextQuotationNumber(existingNumbers: string[]): string {
-    const numbers = existingNumbers
-      .map((num) => {
-        const match = num.match(/QT-(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      })
-      .filter((num) => num > 0);
+function generateNextQuotationNumber(existingNumbers: string[]): string {
+  const numbers = existingNumbers
+    .map((num) => {
+      const match = num.match(/QT-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    })
+    .filter((num) => num > 0);
 
-    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-    return `QT-${String(maxNumber + 1).padStart(3, '0')}`;
-  }
+  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+  return `QT-${String(maxNumber + 1).padStart(3, '0')}`;
+}
 
-  const EditIconButton = ({ editing, onClick }: { editing: boolean; onClick: () => void }) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={onClick}
-      className="h-6 w-6 p-0 hover:bg-gray-200"
-    >
-      {editing ? <Save size={14} className="text-green-600" /> : <Pencil size={14} className="text-gray-600" />}
-    </Button>
-  );
+const EditIconButton = ({ editing, onClick }: { editing: boolean; onClick: () => void }) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    onClick={onClick}
+    className="h-6 w-6 p-0 hover:bg-gray-200"
+  >
+    {editing ? <Save size={14} className="text-green-600" /> : <Pencil size={14} className="text-gray-600" />}
+  </Button>
+);
 
-  export default function QuotationPage() {
-    // Check if this is supplier rate update view
-    const urlParams = new URLSearchParams(window.location.search);
-    const quotationParam = urlParams.get('quotation');
-    const supplierParam = urlParams.get('supplier');
-    const isSupplierView = !!(quotationParam && supplierParam);
+export default function QuotationPage() {
+  // Check if this is supplier rate update view
+  const urlParams = new URLSearchParams(window.location.search);
+  const quotationParam = urlParams.get('quotation');
+  const supplierParam = urlParams.get('supplier');
+  const isSupplierView = !!(quotationParam && supplierParam);
 
-    const {
-      indentSheet,
-      poMasterSheet,
-      updateIndentSheet,
-      updatePoMasterSheet,
-      masterSheet: details,
-    } = useSheets();
+  const {
+    indentSheet,
+    poMasterSheet,
+    updateIndentSheet,
+    updatePoMasterSheet,
+    masterSheet: details,
+  } = useSheets();
 
-    const [mode, setMode] = useState<Mode>('create');
-    const [selectedItems, setSelectedItems] = useState<string[]>([]);
-    const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
-    const [supplierInfos, setSupplierInfos] = useState<SupplierInfo[]>([]);
-    const [masterSuppliers, setMasterSuppliers] = useState<MasterSheetSupplier[]>([]);
-    const [latestQuotationNumbers, setLatestQuotationNumbers] = useState<string[]>([]);
-    
-    // NEW: Supplier view states
-    const [supplierItems, setSupplierItems] = useState<any[]>([]);
-    const [loadingSupplierData, setLoadingSupplierData] = useState(false);
+  const [mode, setMode] = useState<Mode>('create');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [supplierInfos, setSupplierInfos] = useState<SupplierInfo[]>([]);
+  const [masterSuppliers, setMasterSuppliers] = useState<MasterSheetSupplier[]>([]);
+  const [latestQuotationNumbers, setLatestQuotationNumbers] = useState<string[]>([]);
 
-    const [isEditingBilling, setIsEditingBilling] = useState(false);
-    const [billingAddress, setBillingAddress] = useState('');
-    const [isEditingDestination, setIsEditingDestination] = useState(false);
-    const [destinationAddress, setDestinationAddress] = useState('');
+  // NEW: Supplier view states
+  const [supplierItems, setSupplierItems] = useState<any[]>([]);
+  const [loadingSupplierData, setLoadingSupplierData] = useState(false);
 
-
+  const [isEditingBilling, setIsEditingBilling] = useState(false);
+  const [billingAddress, setBillingAddress] = useState('');
+  const [isEditingDestination, setIsEditingDestination] = useState(false);
+  const [destinationAddress, setDestinationAddress] = useState('');
 
 
 
-    
-    // Billing / destination default
-    useEffect(() => {
-      if (details) {
-        setBillingAddress(details.billingAddress || '');
-        setDestinationAddress(details.destinationAddress || '');
+
+
+
+  // Billing / destination default
+  useEffect(() => {
+    if (details) {
+      setBillingAddress(details.billingAddress || '');
+      setDestinationAddress(details.destinationAddress || '');
+    }
+  }, [details]);
+
+
+
+  useEffect(() => {
+    if (isSupplierView && quotationParam) {
+      setLoadingSupplierData(true);
+      fetchSheet('QUOTATION HISTORY')
+        .then((data: any) => {
+          if (Array.isArray(data)) {
+            const items = data.filter((row: any) =>
+              row.vendorName === supplierParam
+            );
+            setSupplierItems(items.map((item: any) => ({
+              internalCode: item.internalCode || '',
+              productName: item.productName || '',
+              qty: item.quantity || '',
+              uom: item.uom || '',
+              specifications: item.specifications || '',
+              remarks: '',
+              rate: ''
+            })));
+          }
+        })
+        .catch((err) => {
+          console.error('Error loading supplier items:', err);
+          toast.error('Failed to load items');
+        })
+        .finally(() => setLoadingSupplierData(false));
+    }
+  }, [isSupplierView, quotationParam, supplierParam]);
+
+
+
+  // Latest quotation nos from Quotation sheet (if needed later)
+  useEffect(() => {
+    const fetchLatestQuotationNumbers = async () => {
+      try {
+        const quotationHistory = await fetchSheet('QUOTATION HISTORY');
+        if (Array.isArray(quotationHistory)) {
+          const quotationNos = quotationHistory
+            .map((row: any) => row.quatationNo || row.quotationNo || '')
+            .filter((no: string) => no && no.trim() !== '');
+          setLatestQuotationNumbers(quotationNos);
+        }
+      } catch (error) {
+        console.error('Error fetching quotation numbers:', error);
       }
-    }, [details]);
+    };
+    fetchLatestQuotationNumbers();
+  }, []);
 
+  useEffect(() => {
+    const fetchMasterSuppliers = async () => {
+      try {
+        const masterData = await fetchSheet('MASTER');
 
+        let vendorsArray: any[] = [];
+        if (masterData && typeof masterData === 'object' && 'vendors' in masterData) {
+          vendorsArray = masterData.vendors || [];
+        } else if (Array.isArray(masterData)) {
+          vendorsArray = masterData;
+        }
 
-    useEffect(() => {
-      if (isSupplierView && quotationParam) {
-        setLoadingSupplierData(true);
-        fetchSheet('QUOTATION HISTORY')
-          .then((data: any) => {
-            if (Array.isArray(data)) {
-              const items = data.filter((row: any) => 
-                row.vendorName === supplierParam
-              );
-              setSupplierItems(items.map((item: any) => ({
-                internalCode: item.internalCode || '',
-                productName: item.productName || '',
-                qty: item.quantity || '',
-                uom: item.uom || '',
-                specifications: item.specifications || '',
-                remarks: '',
-                rate: ''
-              })));
-            }
-          })
-          .catch((err) => {
-            console.error('Error loading supplier items:', err);
-            toast.error('Failed to load items');
-          })
-          .finally(() => setLoadingSupplierData(false));
+        const suppliers: MasterSheetSupplier[] = vendorsArray
+          .map((vendor: any) => ({
+            supplierName: vendor.vendorName || vendor.supplierName || '',
+            vendorGstin: vendor.gstin || vendor.vendorGstin || '',
+            vendorAddress: vendor.address || vendor.vendorAddress || '',
+            email: vendor.email || vendor.vendorEmail || '', // Email भी include करें
+          }))
+          .filter((s) => s.supplierName && typeof s.supplierName === 'string' && s.supplierName.trim() !== '');
+
+        setMasterSuppliers(suppliers);
+
+        if (suppliers.length === 0) {
+          toast.warning('No suppliers found in MASTER sheet');
+        } else {
+          toast.success(`Loaded ${suppliers.length} suppliers`);
+        }
+      } catch (error) {
+        console.error('Error fetching MASTER suppliers:', error);
+        toast.error('Failed to load suppliers from MASTER sheet');
       }
-    }, [isSupplierView, quotationParam, supplierParam]);
+    };
 
+    fetchMasterSuppliers();
+  }, [details]);
 
+  const eligibleItems = useMemo(() => {
+    const uniqueIndents = new Map<string, typeof indentSheet[0]>();
 
-    // Latest quotation nos from Quotation sheet (if needed later)
-    useEffect(() => {
-      const fetchLatestQuotationNumbers = async () => {
-        try {
-          const quotationHistory = await fetchSheet('QUOTATION HISTORY');
-          if (Array.isArray(quotationHistory)) {
-            const quotationNos = quotationHistory
-              .map((row: any) => row.quatationNo || row.quotationNo || '')
-              .filter((no: string) => no && no.trim() !== '');
-            setLatestQuotationNumbers(quotationNos);
-          }
-        } catch (error) {
-          console.error('Error fetching quotation numbers:', error);
-        }
-      };
-      fetchLatestQuotationNumbers();
-    }, []);
+    // Reverse order me process karo
+    const reversedSheet = [...indentSheet].reverse();
 
-    useEffect(() => {
-      const fetchMasterSuppliers = async () => {
-        try {
-          const masterData = await fetchSheet('MASTER');
-    
-          let vendorsArray: any[] = [];
-          if (masterData && typeof masterData === 'object' && 'vendors' in masterData) {
-            vendorsArray = masterData.vendors || [];
-          } else if (Array.isArray(masterData)) {
-            vendorsArray = masterData;
-          }
-    
-          const suppliers: MasterSheetSupplier[] = vendorsArray
-            .map((vendor: any) => ({
-              supplierName: vendor.vendorName || vendor.supplierName || '',
-              vendorGstin: vendor.gstin || vendor.vendorGstin || '',
-              vendorAddress: vendor.address || vendor.vendorAddress || '',
-              email: vendor.email || vendor.vendorEmail || '', // Email भी include करें
-            }))
-            .filter((s) => s.supplierName && typeof s.supplierName === 'string' && s.supplierName.trim() !== '');
-    
-          setMasterSuppliers(suppliers);
-    
-          if (suppliers.length === 0) {
-            toast.warning('No suppliers found in MASTER sheet');
-          } else {
-            toast.success(`Loaded ${suppliers.length} suppliers`);
-          }
-        } catch (error) {
-          console.error('Error fetching MASTER suppliers:', error);
-          toast.error('Failed to load suppliers from MASTER sheet');
-        }
-      };
-    
-      fetchMasterSuppliers();
-    }, [details]);
-
-    const eligibleItems = useMemo(() => {
-      const uniqueIndents = new Map<string, typeof indentSheet[0]>();
-      
-      // Reverse order me process karo
-      const reversedSheet = [...indentSheet].reverse();
-      
-      reversedSheet.forEach(item => {
-        if (!uniqueIndents.has(item.indentNumber)) {
-          uniqueIndents.set(item.indentNumber, item);
-        }
-      });
-      
-      return Array.from(uniqueIndents.values());
-    }, [indentSheet]);
-
-    const form = useForm<QuotationForm>({
-      resolver: zodResolver(quotationSchema),
-      defaultValues: {
-        quotationNumber: '',
-        quotationDate: new Date(),
-        suppliers: [],
-        description: '',
-        selectedIndents: [],
-        terms: details?.defaultTerms || [],
-      },
+    reversedSheet.forEach(item => {
+      if (!uniqueIndents.has(item.indentNumber)) {
+        uniqueIndents.set(item.indentNumber, item);
+      }
     });
 
-    useEffect(() => {
+    return Array.from(uniqueIndents.values());
+  }, [indentSheet]);
+
+  const form = useForm<QuotationForm>({
+    resolver: zodResolver(quotationSchema),
+    defaultValues: {
+      quotationNumber: '',
+      quotationDate: new Date(),
+      suppliers: [],
+      description: '',
+      selectedIndents: [],
+      terms: details?.defaultTerms || [],
+    },
+  });
+
+  useEffect(() => {
     if (details?.defaultTerms) {
       form.setValue('terms', details.defaultTerms);
     }
@@ -1101,27 +1103,27 @@ import { toast } from 'sonner';
   // Supplier multi-select
 
   const handleSupplierSelect = (supplierName: string) => {
-  setSelectedSuppliers((prev) => {
-    const newSuppliers = prev.includes(supplierName)
-      ? prev.filter((s) => s !== supplierName)
-      : [...prev, supplierName];
+    setSelectedSuppliers((prev) => {
+      const newSuppliers = prev.includes(supplierName)
+        ? prev.filter((s) => s !== supplierName)
+        : [...prev, supplierName];
 
-    form.setValue('suppliers', newSuppliers);
+      form.setValue('suppliers', newSuppliers);
 
-    const infos = newSuppliers.map((name) => {
-      const masterSupplier = masterSuppliers.find((s) => s.supplierName === name);
-      return {
-        name,
-        address: masterSupplier?.vendorAddress || '',
-        gstin: masterSupplier?.vendorGstin || '',
-        email: masterSupplier?.email || '', // Email भी fetch करें
-      };
+      const infos = newSuppliers.map((name) => {
+        const masterSupplier = masterSuppliers.find((s) => s.supplierName === name);
+        return {
+          name,
+          address: masterSupplier?.vendorAddress || '',
+          gstin: masterSupplier?.vendorGstin || '',
+          email: masterSupplier?.email || '', // Email भी fetch करें
+        };
+      });
+      setSupplierInfos(infos);
+
+      return newSuppliers;
     });
-    setSupplierInfos(infos);
-
-    return newSuppliers;
-  });
-};
+  };
 
   // Item checkboxes
   const handleItemSelection = (indentNumber: string, checked: boolean) => {
@@ -1148,9 +1150,9 @@ import { toast } from 'sonner';
   });
 
 
-  function generateEmailHTML(quotationNumber: string, items: any[], companyDetails: any, supplier: SupplierInfo): string {
+  function generateEmailHTML(quotationNumber: string, items: any[], companyDetails: any, supplier: SupplierInfo, vendorIndex: number): string {
     console.log("📧 Email Generation - Items count:", items.length);
-    
+
     // Items ko simplified format me convert karo
     const simplifiedItems = items.map(item => ({
       code: item.indentNumber || "N/A",
@@ -1159,190 +1161,326 @@ import { toast } from 'sonner';
       uom: item.uom || "PCS",
       spec: item.specifications || "N/A"
     }));
-    
+
     // Items ko URL-safe JSON me convert karo
     const itemsJSON = JSON.stringify(simplifiedItems);
     console.log("Items JSON length:", itemsJSON.length);
-    
+
     // URL banayein
-    const url = `${window.location.origin}/updaterate?quotation=${quotationNumber}&supplier=${encodeURIComponent(supplier.name)}&items=${encodeURIComponent(itemsJSON)}`;
-    
+    const url = `${window.location.origin}/updaterate?quotation=${quotationNumber}&supplier=${encodeURIComponent(supplier.name)}&items=${encodeURIComponent(itemsJSON)}&vendorIndex=${vendorIndex}`;
+
     console.log("Generated URL:", url);
-    
+
+    const APPS_SCRIPT_URL = import.meta.env.VITE_APP_SCRIPT_URL;
+
+    // Generate table rows for products with form inputs
+    const productRows = simplifiedItems.map((item, index) => `
+      <tr style="border-bottom: 1px solid #e0e0e0;">
+        <td style="padding: 12px 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">${item.code}</td>
+        <td style="padding: 12px 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">${item.name}</td>
+        <td style="padding: 12px 8px; border: 1px solid #ddd; text-align: center; font-size: 12px;">${item.qty}</td>
+        <td style="padding: 12px 8px; border: 1px solid #ddd; text-align: center; font-size: 12px;">${item.uom}</td>
+        <td style="padding: 12px 8px; border: 1px solid #ddd; text-align: left; font-size: 11px; color: #666;">${item.spec}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">
+          <input type="text" name="remarks_${index}" placeholder="Remarks" 
+            style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 2px; font-size: 11px;" />
+        </td>
+        <td style="padding: 8px; border: 1px solid #ddd;">
+          <select name="paymentTerm_${index}" 
+            style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 2px; font-size: 11px;">
+            <option value="">Select</option>
+            <option value="Credit">Credit</option>
+            <option value="Advance">Advance</option>
+          </select>
+        </td>
+        <td style="padding: 8px; border: 1px solid #ddd;">
+          <input type="number" name="rate_${index}" placeholder="Rate" required
+            style="width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 2px; font-size: 11px; text-align: center;" 
+            step="0.01" min="0" />
+        </td>
+        <input type="hidden" name="internalCode_${index}" value="${item.code}" />
+      </tr>
+    `).join('');
+
+    const currentDate = new Date().toLocaleString('en-US', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
     return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { 
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      color: #000000;
-      background-color: #ffffff;
-    }
-    .container { 
-      padding: 20px;
-      max-width: 600px;
-    }
-    .header {
-      margin-bottom: 20px;
-      color: #666666;
-      font-size: 13px;
-    }
-    .header strong {
-      color: #000000;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #dddddd;
-      margin: 20px 0;
-    }
-    a {
-      color: #0000EE;
-      text-decoration: underline;
-    }
-    p {
-      margin: 0 0 10px 0;
-      line-height: 1.6;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <p><strong>From:</strong> &lt;developer2@botivate.in&gt;</p>
-      <p><strong>Date:</strong> Tue, 9 Dec 2025 at 14:59</p>
-      <p><strong>Subject:</strong> Request For Pricing on our Quotation</p>
-      <p><strong>To:</strong> ${supplier.email};</p>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 850px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    
+    <!-- Email Headers Section -->
+    <div style="padding: 20px 20px 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+      <p style="margin: 0;"><strong>From:</strong> &lt;developer2@botivate.in&gt;</p>
+      <p style="margin: 0;"><strong>Date:</strong> ${currentDate}</p>
+      <p style="margin: 0;"><strong>Subject:</strong> <span style="color: #666;">Request For Pricing on our Quotation</span></p>
+      <p style="margin: 0;"><strong>To:</strong> <span style="color: #0066cc; text-decoration: underline;">${supplier.email}</span>;</p>
+      
+      <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;" />
+      
+      <p style="margin: 0 0 10px 0; font-size: 16px; color: #333;">
+        Dear ${supplier.name},
+      </p>
     </div>
-    
-    <hr/>
-    
-    <p>Dear ${supplier.name},</p>
-    
-    <p style="margin: 20px 0;">
-      Please update your rates by clicking the following link:
-      <a href="${url}">Click here</a>
-    </p>
-    
-    <p style="margin: 20px 0 0 0;">
-      Best regards,<br/>
-      ${companyDetails?.companyName || 'Company'}
-    </p>
+
+    <!-- Branding Header -->
+    <div style="background-color: #32a34a; color: white; padding: 20px; text-align: center;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: bold;">Botivate Services LLP</h1>
+      <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Raipur (C.G)</p>
+      <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Phone No - 91 9993023243</p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 25px 20px;">
+      <h2 style="color: #32a34a; margin: 0 0 15px 0; font-size: 18px; text-align: center;">
+        Update Your Quotation Rates
+      </h2>
+      
+      <p style="text-align: center; color: #666; font-size: 14px; margin: 0 0 20px 0;">
+        Please fill in your rates below and click Submit.
+      </p>
+
+      <form action="${APPS_SCRIPT_URL}" method="POST" target="submission_iframe">
+        <input type="hidden" name="action" value="updateExistingRows" />
+        <input type="hidden" name="supplierName" value="${supplier.name}" />
+        <input type="hidden" name="quotationNumber" value="${quotationNumber}" />
+        <input type="hidden" name="itemCount" value="${simplifiedItems.length}" />
+
+        <!-- Products Table -->
+        <div style="overflow-x: auto; margin-bottom: 25px;">
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <thead>
+              <tr style="background-color: #f5f5f5;">
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: 600; font-size: 12px;">Code</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: 600; font-size: 12px;">Product</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 12px;">Qty</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 12px;">UOM</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: 600; font-size: 12px;">Specs</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: 600; font-size: 12px;">Remarks</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 12px;">Term</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 12px;">Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${productRows}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Submit Button -->
+        <div style="text-align: center;">
+          <button type="submit" 
+            style="background-color: #32a34a; color: white; padding: 12px 50px; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
+            SUBMIT RATES
+          </button>
+        </div>
+      </form>
+
+      <!-- Hidden Iframe for submission -->
+      <iframe name="submission_iframe" id="submission_iframe" style="display:none; width:0; height:0; border:none;"></iframe>
+
+      <p style="margin: 20px 0 0 0; font-size: 11px; text-align: center; color: #888;">
+        Quotation Number: <strong>${quotationNumber}</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 15px; background-color: #f9f9f9; border-top: 1px solid #e0e0e0;">
+      <p style="margin: 0; font-size: 10px; color: #999;">
+        Powered By <span style="color: #32a34a; font-weight: 600;">Botivate</span>
+      </p>
+    </div>
+
   </div>
 </body>
 </html>
-`;}
+    `;
+  }
 
 
 
-async function onSubmit(values: QuotationForm) {
-  try {
-    if (selectedItems.length === 0) {
-      toast.error('Please select at least one item');
-      return;
-    }
-    if (selectedSuppliers.length === 0) {
-      toast.error('Please select at least one supplier');
-      return;
-    }
-
-    const selectedItemsData = eligibleItems.filter((item) =>
-      selectedItems.includes(item.indentNumber),
-    );
-
-    // Unique quotation numbers
-    const allNumbers = [
-      ...filterUniqueQuotationNumbers(poMasterSheet),
-      ...latestQuotationNumbers,
-    ];
-    
-    let currentMaxNumber = allNumbers
-      .map(num => {
-        const match = num.match(/QT-(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      })
-      .filter(num => num > 0)
-      .reduce((max, num) => Math.max(max, num), 0);
-
-    const supplierQuotations: { [key: string]: string } = {};
-    
-    for (let i = 0; i < supplierInfos.length; i++) {
-      currentMaxNumber += 1;
-      const uniqueQuotationNumber = `QT-${String(currentMaxNumber).padStart(3, '0')}`;
-      supplierQuotations[supplierInfos[i].name] = uniqueQuotationNumber;
-    }
-
-    // Sheet me save karo
-    const rowsToSave = selectedItemsData.map(item => {
-      const row: any = {
-        internalCode: item.indentNumber,      // A
-        productName: item.productName,        // B
-        quantity: item.quantity,              // C
-        uom: item.uom,                        // D
-        specifications: item.specifications || "", // E
-      };
-
-      // Har supplier ke liye columns
-      supplierInfos.forEach((supplier, index) => {
-        row[`vendorName_${index}`] = supplier.name;
-        row[`rate_${index}`] = '';
-        row[`paymentTerm_${index}`] = '';
-        row[`remarks_${index}`] = '';
-      });
-
-      return row;
-    });
-
-    const result = await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        action: 'insertQuotation',
-        data: JSON.stringify(rowsToSave),
-        supplierCount: String(supplierInfos.length)
-      })
-    });
-
-    const response = await result.json();
-
-    if (response.success) {
-      // Ab emails bhejo
-      for (const supplier of supplierInfos) {
-        if (!supplier.email) continue;
-        
-        const quotationNumber = supplierQuotations[supplier.name];
-        const emailHtml = generateEmailHTML(quotationNumber, selectedItemsData, details, supplier);
-
-        await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'sendSupplierEmail',
-            params: JSON.stringify({
-              quotationNumber: quotationNumber,
-              htmlContent: emailHtml,
-              subject: `Request For Pricing on Quotation ${quotationNumber}`,
-              supplierName: supplier.name,
-              supplierEmail: supplier.email,
-            })
-          })
-        });
+  async function onSubmit(values: QuotationForm) {
+    try {
+      if (selectedItems.length === 0) {
+        toast.error('Please select at least one item');
+        return;
+      }
+      if (selectedSuppliers.length === 0) {
+        toast.error('Please select at least one supplier');
+        return;
       }
 
-      toast.success(`✅ Quotation created and emails sent!`);
+      const selectedItemsData = eligibleItems.filter((item) =>
+        selectedItems.includes(item.indentNumber),
+      );
+
+      // Unique quotation numbers approach:
+      // We will generate unique numbers for emails/PDFs, but for the sheet logic,
+      // we primarily track by indent item. However, for "Quotation No" column in sheet,
+      // we can pick the first one or leave it blank if ambiguous.
+      const allNumbers = [
+        ...filterUniqueQuotationNumbers(poMasterSheet),
+        ...latestQuotationNumbers,
+      ];
+      let currentMaxNumber = allNumbers
+        .map(num => {
+          const match = num.match(/QT-(\d+)/);
+          return match ? parseInt(match[1]) : 0;
+        })
+        .filter(num => num > 0)
+        .reduce((max, num) => Math.max(max, num), 0);
+
+      // Track quotation numbers assigned to each supplier for email content
+      const supplierQuotations: { [key: string]: string } = {};
+
+      // 1. Send Emails & Generate PDFs (Restored Functionality)
+      // This loop handles the "communication" part
+      for (let i = 0; i < supplierInfos.length; i++) {
+        const supplierInfo = supplierInfos[i];
+
+        currentMaxNumber += 1;
+        const uniqueQuotationNumber = `QT-${String(currentMaxNumber).padStart(3, '0')}`;
+        supplierQuotations[supplierInfo.name] = uniqueQuotationNumber;
+
+        // Generate PDF content logic (same as before)
+        const pdfProps: POPdfProps = {
+          companyName: details?.companyName || '',
+          companyPhone: details?.companyPhone || '',
+          companyGstin: details?.companyGstin || '',
+          companyPan: details?.companyPan || '',
+          companyAddress: details?.companyAddress || '',
+          billingAddress: billingAddress,
+          destinationAddress: destinationAddress,
+          supplierName: supplierInfo.name,
+          supplierAddress: supplierInfo.address,
+          supplierGstin: supplierInfo.gstin,
+          orderNumber: uniqueQuotationNumber,
+          orderDate: formatDate(values.quotationDate || new Date()),
+          quotationNumber: uniqueQuotationNumber,
+          quotationDate: formatDate(values.quotationDate || new Date()),
+          enqNo: '',
+          enqDate: '',
+          description: values.description || '',
+          items: selectedItemsData.map(item => ({
+            internalCode: item.indentNumber,
+            product: item.productName,
+            description: item.specifications,
+            quantity: item.quantity,
+            unit: item.uom,
+            rate: 0,
+            gst: 0,
+            discount: 0,
+            amount: 0,
+          })),
+          total: 0,
+          gstAmount: 0,
+          grandTotal: 0,
+          terms: values.terms || [],
+          preparedBy: '',
+          approvedBy: '',
+        };
+
+        // Create and upload PDF
+        const blob = await pdf(<POPdf {...pdfProps} />).toBlob();
+        const file = new File([blob], `QUOTATION-${uniqueQuotationNumber}-${supplierInfo.name}.pdf`, { type: 'application/pdf' });
+
+        if (supplierInfo.email) {
+          try {
+            // Upload PDF
+            const pdfUrl = await uploadFile(
+              file,
+              import.meta.env.VITE_PURCHASE_ORDERS_FOLDER,
+              'email',
+              supplierInfo.email
+            );
+
+            // Send Email via Script
+            const emailHtml = generateEmailHTML(uniqueQuotationNumber, selectedItemsData, details, supplierInfo, i + 1);
+
+            await fetch(import.meta.env.VITE_APP_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                action: 'sendSupplierEmail',
+                params: JSON.stringify({
+                  quotationNumber: uniqueQuotationNumber,
+                  htmlContent: emailHtml,
+                  subject: `Request For Pricing on Quotation ${uniqueQuotationNumber}`,
+                  supplierName: supplierInfo.name,
+                  supplierEmail: supplierInfo.email,
+                  attachmentUrl: pdfUrl // If script supports it, otherwise it's just uploaded
+                })
+              })
+            });
+
+          } catch (emailErr) {
+            console.error(`Failed to email ${supplierInfo.name}`, emailErr);
+            toast.error(`Failed to email ${supplierInfo.name}`);
+          }
+        }
+      }
+
+      // 2. Submit Data to Sheet (Wide Format)
+      // This handles the "persistence" part for comparison
+      const allQuotationRows: any[] = [];
+
+      for (const item of selectedItemsData) {
+        // Use camelCase keys to match GAS normalization logic
+        // "Internal Code" -> internalCode, "vendor1 name" -> vendor1Name
+        const row: any = {
+          timestamp: (values.quotationDate || new Date()).toISOString(),
+          internalCode: item.indentNumber,
+          productName: item.productName,
+          specifications: item.specifications || '',
+          qty: String(item.quantity || ''),
+          uom: item.uom || '',
+          quotationNo: Object.values(supplierQuotations).join(', ') || '',
+        };
+
+        supplierInfos.forEach((supplierInfo, index) => {
+          const suffix = index + 1;
+          // Normalized keys: "vendor1 name" -> vendor1Name
+          row[`vendor${suffix}Name`] = supplierInfo.name || '';
+          row[`rate${suffix}`] = '';
+          row[`paymentTerm${suffix}`] = ''; // Empty - vendor will fill via email
+          row[`remarks${suffix}`] = ''; // Empty - vendor will fill via email
+        });
+
+        allQuotationRows.push(row);
+      }
+
+      console.log('Submitting WIDE data to QUOTATION HISTORY:', allQuotationRows);
+      await postToSheet(allQuotationRows, 'insert', 'QUOTATION HISTORY');
+
+      toast.success(`Sent quotations to ${selectedSuppliers.length} suppliers and saved comparison data.`);
       form.reset();
       setSelectedItems([]);
       setSelectedSuppliers([]);
       setSupplierInfos([]);
-    }
 
-  } catch (err) {
-    console.error('❌ Error:', err);
-    toast.error('Failed: ' + (err as Error).message);
+      setTimeout(() => {
+        updatePoMasterSheet();
+        updateIndentSheet();
+      }, 1000);
+
+    } catch (err) {
+      console.error('❌ Error:', err);
+      toast.error('Failed: ' + (err as Error).message);
+    }
   }
-}
 
   function onError(e: any) {
     console.log('Form errors:', e);
@@ -1382,7 +1520,7 @@ async function onSubmit(values: QuotationForm) {
   };
 
 
-  
+
 
   return (
     <div className="w-full h-screen overflow-hidden bg-gradient-to-br from-blue-100 via-purple-50 to-blue-50 rounded-md flex flex-col">
@@ -1420,7 +1558,7 @@ async function onSubmit(values: QuotationForm) {
                 {/* Company header */}
                 <div className="flex items-center justify-center gap-4 bg-blue-50 p-4 rounded">
                   <img
-                    src="/logo.png"
+                    src="/botivate1-logo.jpg"
                     alt="Company Logo"
                     className="w-20 h-20 object-contain"
                   />
