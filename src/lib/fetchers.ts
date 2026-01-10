@@ -144,11 +144,7 @@ export async function postToSheet(
     | Partial<UserPermissions>[]
     | Partial<PoMasterSheet>[]
     | Partial<QuotationHistorySheet>[],
-  action:
-    | 'insert'
-    | 'insertQuotation'
-    | 'sendSupplierEmail'
-    | 'updateSupplierRates' = 'insert',
+  action: 'insert' | 'insertQuotation' | 'sendSupplierEmail' | 'updateSupplierRates' | 'update' | 'delete' | (string & {}) = 'insert',
   sheet: Sheet = 'INDENT',
   extraParams?: any
 ) {
